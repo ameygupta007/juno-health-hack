@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   hudActions: {
     position: 'absolute',
-    top: 60,
+    bottom: 40,
     right: 20,
   },
   resetButton: {
