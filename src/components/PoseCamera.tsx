@@ -1,17 +1,19 @@
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
-  MediapipeCamera,
   RunningMode,
   usePoseDetection,
   type DetectionError,
   type PoseDetectionResultBundle,
   type ViewCoordinator,
 } from 'react-native-mediapipe';
+import { Camera } from 'react-native-vision-camera';
 
 import { PoseOverlay } from '@/components/PoseOverlay';
 import { FlightTimeHud } from '@/components/FlightTimeHud';
 import { JumpTestOverlay } from '@/components/JumpTestOverlay';
+import { RecordableMediapipeCamera } from '@/components/RecordableMediapipeCamera';
+import { RecordingReview } from '@/components/RecordingReview';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
 import { useFlightTime } from '@/hooks/useFlightTime';
 import { useJumpTest } from '@/hooks/useJumpTest';
@@ -22,6 +24,11 @@ import type { NormalizedLandmark, PoseFrame } from '@/types/pose';
 export function PoseCamera() {
   const [frame, setFrame] = useState<PoseFrame | null>(null);
   const [resetKey, setResetKey] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [reviewVisible, setReviewVisible] = useState(false);
+  const cameraRef = useRef<Camera>(null);
 
   const onResults = useCallback(
     (results: PoseDetectionResultBundle, coordinator: ViewCoordinator) => {
@@ -88,9 +95,60 @@ export function PoseCamera() {
     knee.peakFlexionDeg === null ? '—' : `${knee.peakFlexionDeg.toFixed(0)}°`;
   const peakLegText = knee.peakLeg === null ? '' : knee.peakLeg.toUpperCase();
 
+  const startRecording = useCallback(() => {
+    if (!cameraRef.current || isRecording || isSaving) return;
+
+    setVideoUri(null);
+    setIsRecording(true);
+    try {
+      cameraRef.current.startRecording({
+        fileType: 'mp4',
+        videoCodec: 'h264',
+        onRecordingFinished: (video) => {
+          const uri = video.path.startsWith('file://')
+            ? video.path
+            : `file://${video.path}`;
+          setVideoUri(uri);
+          setIsRecording(false);
+          setIsSaving(false);
+          setReviewVisible(true);
+        },
+        onRecordingError: (error) => {
+          console.warn('[PoseCamera] recording error', error);
+          setIsRecording(false);
+          setIsSaving(false);
+          Alert.alert('Recording failed', 'The camera could not save this recording.');
+        },
+      });
+    } catch (error) {
+      console.warn('[PoseCamera] could not start recording', error);
+      setIsRecording(false);
+      Alert.alert('Recording failed', 'The camera could not start recording.');
+    }
+  }, [isRecording, isSaving]);
+
+  const stopRecording = useCallback(async () => {
+    if (!cameraRef.current || !isRecording || isSaving) return;
+    setIsSaving(true);
+    try {
+      await cameraRef.current.stopRecording();
+    } catch (error) {
+      console.warn('[PoseCamera] could not stop recording', error);
+      setIsRecording(false);
+      setIsSaving(false);
+      Alert.alert('Recording failed', 'The camera could not finish the MP4.');
+    }
+  }, [isRecording, isSaving]);
+
   return (
     <View style={styles.container}>
-      <MediapipeCamera style={styles.camera} solution={detector} activeCamera="front" />
+      <RecordableMediapipeCamera
+        ref={cameraRef}
+        style={styles.camera}
+        solution={detector}
+        activeCamera="front"
+        isActive={!reviewVisible}
+      />
       <PoseOverlay frame={frame} width={width} height={height} balance={balance} />
       <FlightTimeHud metrics={flightTime} />
       <View style={styles.hud} pointerEvents="none">
@@ -113,6 +171,36 @@ export function PoseCamera() {
           <Text style={styles.peakValue}>{peakAngleText}</Text>
         </View>
       </View>
+      <View style={styles.recordingActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
+          disabled={isSaving}
+          onPress={isRecording ? stopRecording : startRecording}
+          style={({ pressed }) => [
+            styles.recordButton,
+            isRecording && styles.stopButton,
+            pressed && styles.resetButtonPressed,
+            isSaving && styles.disabledButton,
+          ]}
+        >
+          <View style={isRecording ? styles.stopIcon : styles.recordIcon} />
+          <Text style={styles.resetButtonText}>
+            {isSaving ? 'Saving…' : isRecording ? 'Stop' : 'Record'}
+          </Text>
+        </Pressable>
+        {videoUri && !isRecording ? (
+          <Pressable
+            onPress={() => setReviewVisible(true)}
+            style={({ pressed }) => [
+              styles.resetButton,
+              pressed && styles.resetButtonPressed,
+            ]}
+          >
+            <Text style={styles.resetButtonText}>Review</Text>
+          </Pressable>
+        ) : null}
+      </View>
       <View style={styles.hudActions}>
         <Pressable
           accessibilityRole="button"
@@ -133,6 +221,11 @@ export function PoseCamera() {
         onCancel={jumpTest.cancel}
         onRestart={jumpTest.restart}
         onClose={jumpTest.cancel}
+      />
+      <RecordingReview
+        visible={reviewVisible}
+        videoUri={videoUri}
+        onClose={() => setReviewVisible(false)}
       />
     </View>
   );
@@ -198,6 +291,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
     lineHeight: 62,
+  },
+  recordingActions: {
+    position: 'absolute',
+    bottom: 110,
+    left: 20,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  recordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  stopButton: {
+    backgroundColor: 'rgba(127,29,29,0.85)',
+  },
+  recordIcon: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#ef4444',
+  },
+  stopIcon: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: '#fff',
+  },
+  disabledButton: {
+    opacity: 0.55,
   },
   resetButton: {
     backgroundColor: 'rgba(0,0,0,0.55)',
