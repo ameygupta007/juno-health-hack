@@ -72,6 +72,8 @@ export function PoseCamera() {
   const { width, height } = detector.cameraViewDimensions;
 
   const stanceLabel = knee.stanceLeg === null ? '—' : knee.stanceLeg.toUpperCase();
+  const airborneLabel =
+    knee.airborneLeg === null ? '—' : knee.airborneLeg.toUpperCase();
   const kneeCurrent =
     knee.currentAngleDeg === null ? '—' : `${knee.currentAngleDeg.toFixed(1)}°`;
   const kneePeak =
@@ -95,6 +97,7 @@ export function PoseCamera() {
           sway {balance.swayPx.toFixed(1)}px
         </Text>
         <Text style={styles.hudText}>stance {stanceLabel}</Text>
+        <Text style={styles.hudText}>airborne {airborneLabel}</Text>
         <Text style={styles.hudText}>knee {kneeCurrent}</Text>
         <Text style={styles.hudText}>peak {kneePeak}</Text>
       </View>

@@ -9,6 +9,7 @@ import type { PoseFrame } from '@/types/pose';
 
 type KneeFlexionMetrics = {
   stanceLeg: Leg | null;
+  airborneLeg: Leg | null;
   currentAngleDeg: number | null;
   peakFlexionDeg: number | null;
   peakLeg: Leg | null;
@@ -38,6 +39,7 @@ export function useKneeFlexionMetrics(
     if (!frame) {
       return {
         stanceLeg: null,
+        airborneLeg: null,
         currentAngleDeg: null,
         peakFlexionDeg: peakRef.current.angle,
         peakLeg: peakRef.current.leg,
@@ -60,6 +62,8 @@ export function useKneeFlexionMetrics(
 
     return {
       stanceLeg,
+      airborneLeg:
+        stanceLeg === null ? null : stanceLeg === 'left' ? 'right' : 'left',
       currentAngleDeg: angleDeg,
       peakFlexionDeg: peakRef.current.angle,
       peakLeg: peakRef.current.leg,

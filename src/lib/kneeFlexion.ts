@@ -2,11 +2,12 @@ import { POSE_LANDMARKS, type NormalizedLandmark } from '@/types/pose';
 
 const MIN_VIS = 0.5;
 
-// Minimum ankle-height difference (in normalized image-height units) required
-// before we call one leg the "stance" leg. Below this, both feet are close to
-// the same height — treat as ambiguous (standing or symmetric squat) so we
-// don't mislabel a normal two-foot stance as a one-leg jump.
-const STANCE_MIN_DY = 0.05;
+// Weighted evidence for ankle height, knee bend, and projected shin length.
+// A minimum combined score avoids guessing during an ordinary two-foot stance.
+const FOOT_HEIGHT_WEIGHT = 0.5;
+const KNEE_ANGLE_WEIGHT = 0.3;
+const SHIN_LENGTH_WEIGHT = 0.2;
+const MIN_STANCE_SCORE = 0.18;
 
 export type Leg = 'left' | 'right';
 
@@ -57,15 +58,64 @@ export function computeKneeFlexionDeg(
   return { angleDeg };
 }
 
-// The "stance" leg during a one-leg jump is the planted one — its ankle stays
-// low while the other ankle rises (knee draw-up or trailing leg). In image
-// coords y grows downward, so the leg with the LARGER ankle-y is planted.
+// The stance leg usually has the lower foot, straighter knee, and longer
+// projected knee-to-ankle segment. All three cues are combined below.
 export function detectStanceLeg(normalized: NormalizedLandmark[]): Leg | null {
+  const leftHip = normalized[POSE_LANDMARKS.leftHip];
+  const rightHip = normalized[POSE_LANDMARKS.rightHip];
+  const leftKnee = normalized[POSE_LANDMARKS.leftKnee];
+  const rightKnee = normalized[POSE_LANDMARKS.rightKnee];
   const leftAnkle = normalized[POSE_LANDMARKS.leftAnkle];
   const rightAnkle = normalized[POSE_LANDMARKS.rightAnkle];
-  if (!visible(leftAnkle) || !visible(rightAnkle)) return null;
+  if (
+    !visible(leftHip) ||
+    !visible(rightHip) ||
+    !visible(leftKnee) ||
+    !visible(rightKnee) ||
+    !visible(leftAnkle) ||
+    !visible(rightAnkle)
+  ) {
+    return null;
+  }
 
-  const dy = leftAnkle.y - rightAnkle.y;
-  if (Math.abs(dy) < STANCE_MIN_DY) return null;
-  return dy > 0 ? 'left' : 'right';
+  const leftShinLength = distance3d(leftKnee, leftAnkle);
+  const rightShinLength = distance3d(rightKnee, rightAnkle);
+  const shinScale = (leftShinLength + rightShinLength) / 2;
+  if (shinScale === 0) return null;
+
+  const leftKneeAngle = computeKneeFlexionDeg(normalized, 'left').angleDeg;
+  const rightKneeAngle = computeKneeFlexionDeg(normalized, 'right').angleDeg;
+  if (leftKneeAngle === null || rightKneeAngle === null) return null;
+
+  const footToFootDistance = distance3d(leftAnkle, rightAnkle);
+  const verticalFootGap = leftAnkle.y - rightAnkle.y;
+  const verticalShare =
+    footToFootDistance === 0
+      ? 0
+      : Math.min(1, Math.abs(verticalFootGap) / footToFootDistance);
+
+  // Positive evidence favours the left leg; negative favours the right.
+  const heightEvidence =
+    clamp(verticalFootGap / (shinScale * 0.35), -1, 1) * verticalShare;
+  const bendEvidence = clamp((leftKneeAngle - rightKneeAngle) / 35, -1, 1);
+  const shinEvidence = clamp(
+    (leftShinLength - rightShinLength) / (shinScale * 0.2),
+    -1,
+    1,
+  );
+  const score =
+    heightEvidence * FOOT_HEIGHT_WEIGHT +
+    bendEvidence * KNEE_ANGLE_WEIGHT +
+    shinEvidence * SHIN_LENGTH_WEIGHT;
+
+  if (Math.abs(score) < MIN_STANCE_SCORE) return null;
+  return score > 0 ? 'left' : 'right';
+}
+
+function distance3d(a: NormalizedLandmark, b: NormalizedLandmark): number {
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
