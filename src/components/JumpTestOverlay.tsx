@@ -10,6 +10,8 @@ type Props = {
   onCancel: () => void;
   onRestart: () => void;
   onClose: () => void;
+  hasFootage: boolean;
+  onReview: () => void;
 };
 
 export function JumpTestOverlay({
@@ -19,6 +21,8 @@ export function JumpTestOverlay({
   onCancel,
   onRestart,
   onClose,
+  hasFootage,
+  onReview,
 }: Props) {
   if (state.kind === 'idle') {
     return (
@@ -36,7 +40,9 @@ export function JumpTestOverlay({
       stanceLeg === null
         ? 'stance: —  stand on one leg'
         : stanceLeg === state.leg
-          ? `stance: ${stanceLeg.toUpperCase()}  READY`
+          ? `stance: ${stanceLeg.toUpperCase()}  ${
+              state.supportReady ? 'READY' : 'HOLD STILL'
+            }`
           : `stance: ${stanceLeg.toUpperCase()}  WRONG LEG`;
     const stanceColor =
       stanceLeg === null ? '#d1d5db' : stanceLeg === state.leg ? '#4ade80' : '#facc15';
@@ -88,6 +94,17 @@ export function JumpTestOverlay({
         </View>
         <Text style={[styles.asymmetry, { color: asymmetryColor }]}>{asymmetryText}</Text>
         <View style={styles.resultsActions}>
+          {hasFootage ? (
+            <Pressable
+              onPress={onReview}
+              style={({ pressed }) => [
+                styles.pillButton,
+                pressed && styles.pillButtonPressed,
+              ]}
+            >
+              <Text style={styles.pillButtonText}>Review footage</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={onRestart}
             style={({ pressed }) => [styles.pillButton, pressed && styles.pillButtonPressed]}
@@ -259,6 +276,8 @@ const styles = StyleSheet.create({
   },
   resultsActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 12,
     marginTop: 4,
   },

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   RunningMode,
@@ -18,17 +18,20 @@ import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
 import { useFlightTime } from '@/hooks/useFlightTime';
 import { useJumpTest } from '@/hooks/useJumpTest';
 import { useKneeFlexionMetrics } from '@/hooks/useKneeFlexionMetrics';
+import { useSupportLeg } from '@/hooks/useSupportLeg';
 import { BALANCE_COLORS } from '@/lib/balance';
 import type { NormalizedLandmark, PoseFrame } from '@/types/pose';
 
 export function PoseCamera() {
   const [frame, setFrame] = useState<PoseFrame | null>(null);
-  const [resetKey, setResetKey] = useState(0);
+  const [peakResetKey, setPeakResetKey] = useState(0);
+  const [supportResetKey, setSupportResetKey] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [reviewVisible, setReviewVisible] = useState(false);
   const cameraRef = useRef<Camera>(null);
+  const reviewOnRecordingFinishRef = useRef(false);
 
   const onResults = useCallback(
     (results: PoseDetectionResultBundle, coordinator: ViewCoordinator) => {
@@ -76,17 +79,38 @@ export function PoseCamera() {
   );
 
   const balance = useBalanceMetrics(frame);
-  const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(frame);
-  const knee = useKneeFlexionMetrics(frame, resetKey, flightTime.phase === 'airborne');
-  const resetPeak = useCallback(() => setResetKey((k) => k + 1), []);
+  const support = useSupportLeg(frame, supportResetKey);
+  const liveSupportLeg =
+    support.metrics.state === 'LEFT_SUPPORT'
+      ? 'left'
+      : support.metrics.state === 'RIGHT_SUPPORT'
+        ? 'right'
+        : null;
+  const selectedSupportLeg =
+    support.metrics.lockedSupportLeg ?? liveSupportLeg;
+  const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(
+    frame,
+    support.metrics,
+  );
+  const knee = useKneeFlexionMetrics(
+    frame,
+    peakResetKey,
+    selectedSupportLeg,
+    flightTime.phase === 'airborne',
+  );
+  const resetPeak = useCallback(() => setPeakResetKey((key) => key + 1), []);
   const jumpTest = useJumpTest({
     flightMetrics: flightTime,
     kneeMetrics: knee,
+    supportMetrics: support.metrics,
     onResetPeak: resetPeak,
+    onLockSupport: support.lockCurrentSupport,
+    onUnlockSupport: support.unlockSupport,
   });
   const { width, height } = detector.cameraViewDimensions;
 
-  const stanceLabel = knee.stanceLeg === null ? '—' : knee.stanceLeg.toUpperCase();
+  const stanceLabel =
+    selectedSupportLeg === null ? '—' : selectedSupportLeg.toUpperCase();
   const airborneLabel =
     knee.airborneLeg === null ? '—' : knee.airborneLeg.toUpperCase();
   const kneeCurrent =
@@ -99,6 +123,7 @@ export function PoseCamera() {
     if (!cameraRef.current || isRecording || isSaving) return;
 
     setVideoUri(null);
+    reviewOnRecordingFinishRef.current = false;
     setIsRecording(true);
     try {
       cameraRef.current.startRecording({
@@ -108,10 +133,14 @@ export function PoseCamera() {
           const uri = video.path.startsWith('file://')
             ? video.path
             : `file://${video.path}`;
-          setVideoUri(uri);
+          if (reviewOnRecordingFinishRef.current) {
+            setVideoUri(uri);
+            setReviewVisible(true);
+          } else {
+            setVideoUri(null);
+          }
           setIsRecording(false);
           setIsSaving(false);
-          setReviewVisible(true);
         },
         onRecordingError: (error) => {
           console.warn('[PoseCamera] recording error', error);
@@ -127,8 +156,9 @@ export function PoseCamera() {
     }
   }, [isRecording, isSaving]);
 
-  const stopRecording = useCallback(async () => {
+  const stopRecording = useCallback(async (reviewWhenFinished: boolean) => {
     if (!cameraRef.current || !isRecording || isSaving) return;
+    reviewOnRecordingFinishRef.current = reviewWhenFinished;
     setIsSaving(true);
     try {
       await cameraRef.current.stopRecording();
@@ -140,6 +170,24 @@ export function PoseCamera() {
     }
   }, [isRecording, isSaving]);
 
+  const previousJumpKindRef = useRef(jumpTest.state.kind);
+  useEffect(() => {
+    const previous = previousJumpKindRef.current;
+    const current = jumpTest.state.kind;
+
+    if (
+      current === 'awaiting' &&
+      (previous === 'idle' || previous === 'complete')
+    ) {
+      startRecording();
+    } else if (previous === 'awaiting' && current === 'complete') {
+      void stopRecording(true);
+    } else if (previous === 'awaiting' && current === 'idle') {
+      void stopRecording(false);
+    }
+    previousJumpKindRef.current = current;
+  }, [jumpTest.state.kind, startRecording, stopRecording]);
+
   return (
     <View style={styles.container}>
       <RecordableMediapipeCamera
@@ -149,7 +197,13 @@ export function PoseCamera() {
         activeCamera="front"
         isActive={!reviewVisible}
       />
-      <PoseOverlay frame={frame} width={width} height={height} balance={balance} />
+      <PoseOverlay
+        frame={frame}
+        width={width}
+        height={height}
+        balance={balance}
+        support={support.metrics}
+      />
       <FlightTimeHud metrics={flightTime} />
       <View style={styles.hud} pointerEvents="none">
         <Text style={[styles.hudBadge, { backgroundColor: BALANCE_COLORS[balance.state] }]}>
@@ -163,6 +217,21 @@ export function PoseCamera() {
         </Text>
         <Text style={styles.hudText}>stance {stanceLabel}</Text>
         <Text style={styles.hudText}>airborne {airborneLabel}</Text>
+        <Text style={styles.hudText}>{support.metrics.state.replace('_', ' ')}</Text>
+        <Text style={styles.hudText}>
+          contact L {formatContact(support.metrics.leftContact)} · R{' '}
+          {formatContact(support.metrics.rightContact)}
+        </Text>
+        <Text style={styles.hudText}>
+          foot vis L {support.metrics.leftFootVisibility.toFixed(2)} · R{' '}
+          {support.metrics.rightFootVisibility.toFixed(2)}
+        </Text>
+        <Text style={styles.hudText}>
+          {support.metrics.isCalibrated
+            ? `ground ${support.metrics.groundY?.toFixed(3)}`
+            : `calibrating ${Math.round(support.metrics.calibrationProgress * 100)}%`}
+        </Text>
+        {isRecording ? <Text style={styles.recordingText}>● RECORDING TEST</Text> : null}
         <Text style={styles.hudText}>knee {kneeCurrent}</Text>
       </View>
       <View style={styles.peakDisplayWrap} pointerEvents="none">
@@ -171,36 +240,6 @@ export function PoseCamera() {
           <Text style={styles.peakValue}>{peakAngleText}</Text>
         </View>
       </View>
-      <View style={styles.recordingActions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
-          disabled={isSaving}
-          onPress={isRecording ? stopRecording : startRecording}
-          style={({ pressed }) => [
-            styles.recordButton,
-            isRecording && styles.stopButton,
-            pressed && styles.resetButtonPressed,
-            isSaving && styles.disabledButton,
-          ]}
-        >
-          <View style={isRecording ? styles.stopIcon : styles.recordIcon} />
-          <Text style={styles.resetButtonText}>
-            {isSaving ? 'Saving…' : isRecording ? 'Stop' : 'Record'}
-          </Text>
-        </Pressable>
-        {videoUri && !isRecording ? (
-          <Pressable
-            onPress={() => setReviewVisible(true)}
-            style={({ pressed }) => [
-              styles.resetButton,
-              pressed && styles.resetButtonPressed,
-            ]}
-          >
-            <Text style={styles.resetButtonText}>Review</Text>
-          </Pressable>
-        ) : null}
-      </View>
       <View style={styles.hudActions}>
         <Pressable
           accessibilityRole="button"
@@ -208,6 +247,7 @@ export function PoseCamera() {
           onPress={() => {
             resetFlightTime();
             resetPeak();
+            setSupportResetKey((key) => key + 1);
           }}
           style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
         >
@@ -221,6 +261,8 @@ export function PoseCamera() {
         onCancel={jumpTest.cancel}
         onRestart={jumpTest.restart}
         onClose={jumpTest.cancel}
+        hasFootage={videoUri !== null}
+        onReview={() => setReviewVisible(true)}
       />
       <RecordingReview
         visible={reviewVisible}
@@ -292,39 +334,14 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     lineHeight: 62,
   },
-  recordingActions: {
-    position: 'absolute',
-    bottom: 110,
-    left: 20,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  recordButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  recordingText: {
+    color: '#f87171',
+    fontSize: 12,
+    fontWeight: '800',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
-  },
-  stopButton: {
-    backgroundColor: 'rgba(127,29,29,0.85)',
-  },
-  recordIcon: {
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    backgroundColor: '#ef4444',
-  },
-  stopIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    backgroundColor: '#fff',
-  },
-  disabledButton: {
-    opacity: 0.55,
   },
   resetButton: {
     backgroundColor: 'rgba(0,0,0,0.55)',
@@ -341,3 +358,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+function formatContact(contact: boolean | null): string {
+  return contact === null ? '?' : contact ? 'true' : 'false';
+}

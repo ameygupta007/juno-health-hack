@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import {
   computeKneeFlexionDeg,
-  detectStanceLeg,
   type Leg,
 } from '@/lib/kneeFlexion';
 import { createOneEuroFilter, type OneEuroFilter } from '@/lib/oneEuroFilter';
@@ -33,6 +32,7 @@ const SUSTAIN_FRAMES = 3;
 export function useKneeFlexionMetrics(
   frame: PoseFrame | null,
   resetKey: number,
+  stanceLeg: Leg | null,
   pausePeakTracking = false,
 ): KneeFlexionMetrics {
   const filterRef = useRef<OneEuroFilter>(createOneEuroFilter());
@@ -72,7 +72,6 @@ export function useKneeFlexionMetrics(
       };
     }
 
-    const stanceLeg = detectStanceLeg(frame.normalizedLandmarks);
     const airborneLeg =
       stanceLeg === null ? null : stanceLeg === 'left' ? 'right' : 'left';
 
@@ -111,5 +110,5 @@ export function useKneeFlexionMetrics(
     }
 
     return { stanceLeg, airborneLeg, currentAngleDeg: smoothed, ...peakSnapshot() };
-  }, [frame]);
+  }, [frame, stanceLeg]);
 }

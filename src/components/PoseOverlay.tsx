@@ -1,6 +1,7 @@
 import Svg, { Circle, Line } from 'react-native-svg';
 
 import { BALANCE_COLORS, type BalanceMetrics } from '@/lib/balance';
+import type { SupportLegMetrics } from '@/lib/supportLeg';
 import { POSE_CONNECTIONS, type PoseFrame } from '@/types/pose';
 
 type Props = {
@@ -8,11 +9,12 @@ type Props = {
   width: number;
   height: number;
   balance?: BalanceMetrics;
+  support?: SupportLegMetrics;
 };
 
 const MIN_VISIBILITY = 0.5;
 
-export function PoseOverlay({ frame, width, height, balance }: Props) {
+export function PoseOverlay({ frame, width, height, balance, support }: Props) {
   if (!frame) return null;
 
   const skeletonColor = balance ? BALANCE_COLORS[balance.state] : '#4ade80';
@@ -24,6 +26,19 @@ export function PoseOverlay({ frame, width, height, balance }: Props) {
       style={{ position: 'absolute', top: 0, left: 0 }}
       pointerEvents="none"
     >
+      {support?.groundScreenY !== null &&
+      support?.groundScreenY !== undefined ? (
+        <Line
+          x1={0}
+          y1={support.groundScreenY}
+          x2={width}
+          y2={support.groundScreenY}
+          stroke="#22d3ee"
+          strokeWidth={2}
+          strokeDasharray="8,5"
+          opacity={0.8}
+        />
+      ) : null}
       {POSE_CONNECTIONS.map(([a, b], i) => {
         const p1 = frame.landmarks[a];
         const p2 = frame.landmarks[b];

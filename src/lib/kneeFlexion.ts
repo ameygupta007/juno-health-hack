@@ -2,32 +2,23 @@ import { POSE_LANDMARKS, type NormalizedLandmark } from '@/types/pose';
 
 const MIN_VIS = 0.5;
 
-// Weighted evidence for ankle height, knee bend, and projected shin length.
-// A minimum combined score avoids guessing during an ordinary two-foot stance.
-const FOOT_HEIGHT_WEIGHT = 0.5;
-const KNEE_ANGLE_WEIGHT = 0.3;
-const SHIN_LENGTH_WEIGHT = 0.2;
-const MIN_STANCE_SCORE = 0.18;
-
 export type Leg = 'left' | 'right';
 
 const visible = (lm: NormalizedLandmark | undefined): lm is NormalizedLandmark =>
   !!lm && lm.visibility >= MIN_VIS;
 
-// `Leg` is the user's anatomical side. The front camera is mirrored before
-// the frame reaches the model, so MediaPipe's `leftAnkle` (index 27) actually
-// sits on the user's anatomical RIGHT on screen, and vice versa. All lookups
-// go through this map so callers can think in user-facing terms.
+// `Leg` is always the subject's anatomical side. Preview mirroring only changes
+// rendering and must never swap MediaPipe's LEFT_* and RIGHT_* labels.
 const LEG_INDICES: Record<Leg, { hip: number; knee: number; ankle: number }> = {
   left: {
-    hip: POSE_LANDMARKS.rightHip,
-    knee: POSE_LANDMARKS.rightKnee,
-    ankle: POSE_LANDMARKS.rightAnkle,
-  },
-  right: {
     hip: POSE_LANDMARKS.leftHip,
     knee: POSE_LANDMARKS.leftKnee,
     ankle: POSE_LANDMARKS.leftAnkle,
+  },
+  right: {
+    hip: POSE_LANDMARKS.rightHip,
+    knee: POSE_LANDMARKS.rightKnee,
+    ankle: POSE_LANDMARKS.rightAnkle,
   },
 };
 
@@ -60,66 +51,4 @@ export function computeKneeFlexionDeg(
   const angleDeg = (Math.acos(cos) * 180) / Math.PI;
 
   return { angleDeg };
-}
-
-// The stance leg usually has the lower foot, straighter knee, and longer
-// projected knee-to-ankle segment. All three cues are combined below.
-export function detectStanceLeg(normalized: NormalizedLandmark[]): Leg | null {
-  const leftHip = normalized[POSE_LANDMARKS.leftHip];
-  const rightHip = normalized[POSE_LANDMARKS.rightHip];
-  const leftKnee = normalized[POSE_LANDMARKS.leftKnee];
-  const rightKnee = normalized[POSE_LANDMARKS.rightKnee];
-  const leftAnkle = normalized[POSE_LANDMARKS.leftAnkle];
-  const rightAnkle = normalized[POSE_LANDMARKS.rightAnkle];
-  if (
-    !visible(leftHip) ||
-    !visible(rightHip) ||
-    !visible(leftKnee) ||
-    !visible(rightKnee) ||
-    !visible(leftAnkle) ||
-    !visible(rightAnkle)
-  ) {
-    return null;
-  }
-
-  const leftShinLength = distance3d(leftKnee, leftAnkle);
-  const rightShinLength = distance3d(rightKnee, rightAnkle);
-  const shinScale = (leftShinLength + rightShinLength) / 2;
-  if (shinScale === 0) return null;
-
-  const leftKneeAngle = computeKneeFlexionDeg(normalized, 'left').angleDeg;
-  const rightKneeAngle = computeKneeFlexionDeg(normalized, 'right').angleDeg;
-  if (leftKneeAngle === null || rightKneeAngle === null) return null;
-
-  const footToFootDistance = distance3d(leftAnkle, rightAnkle);
-  const verticalFootGap = leftAnkle.y - rightAnkle.y;
-  const verticalShare =
-    footToFootDistance === 0
-      ? 0
-      : Math.min(1, Math.abs(verticalFootGap) / footToFootDistance);
-
-  // Positive evidence favours the left leg; negative favours the right.
-  const heightEvidence =
-    clamp(verticalFootGap / (shinScale * 0.35), -1, 1) * verticalShare;
-  const bendEvidence = clamp((leftKneeAngle - rightKneeAngle) / 35, -1, 1);
-  const shinEvidence = clamp(
-    (leftShinLength - rightShinLength) / (shinScale * 0.2),
-    -1,
-    1,
-  );
-  const score =
-    heightEvidence * FOOT_HEIGHT_WEIGHT +
-    bendEvidence * KNEE_ANGLE_WEIGHT +
-    shinEvidence * SHIN_LENGTH_WEIGHT;
-
-  if (Math.abs(score) < MIN_STANCE_SCORE) return null;
-  return score > 0 ? 'left' : 'right';
-}
-
-function distance3d(a: NormalizedLandmark, b: NormalizedLandmark): number {
-  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }

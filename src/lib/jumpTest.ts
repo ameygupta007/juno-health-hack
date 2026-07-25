@@ -13,7 +13,7 @@ export type JumpResult = {
 
 export type JumpTestState =
   | { kind: 'idle' }
-  | { kind: 'awaiting'; leg: Leg; stepIndex: 1 | 2 }
+  | { kind: 'awaiting'; leg: Leg; stepIndex: 1 | 2; supportReady: boolean }
   | { kind: 'complete'; results: JumpResult[] };
 
 export type JumpTestControls = {
