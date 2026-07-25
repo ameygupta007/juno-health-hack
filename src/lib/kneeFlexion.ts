@@ -14,16 +14,20 @@ export type Leg = 'left' | 'right';
 const visible = (lm: NormalizedLandmark | undefined): lm is NormalizedLandmark =>
   !!lm && lm.visibility >= MIN_VIS;
 
+// `Leg` is the user's anatomical side. The front camera is mirrored before
+// the frame reaches the model, so MediaPipe's `leftAnkle` (index 27) actually
+// sits on the user's anatomical RIGHT on screen, and vice versa. All lookups
+// go through this map so callers can think in user-facing terms.
 const LEG_INDICES: Record<Leg, { hip: number; knee: number; ankle: number }> = {
   left: {
-    hip: POSE_LANDMARKS.leftHip,
-    knee: POSE_LANDMARKS.leftKnee,
-    ankle: POSE_LANDMARKS.leftAnkle,
-  },
-  right: {
     hip: POSE_LANDMARKS.rightHip,
     knee: POSE_LANDMARKS.rightKnee,
     ankle: POSE_LANDMARKS.rightAnkle,
+  },
+  right: {
+    hip: POSE_LANDMARKS.leftHip,
+    knee: POSE_LANDMARKS.leftKnee,
+    ankle: POSE_LANDMARKS.leftAnkle,
   },
 };
 

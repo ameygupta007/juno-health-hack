@@ -70,7 +70,7 @@ export function PoseCamera() {
 
   const balance = useBalanceMetrics(frame);
   const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(frame);
-  const knee = useKneeFlexionMetrics(frame, resetKey);
+  const knee = useKneeFlexionMetrics(frame, resetKey, flightTime.phase === 'airborne');
   const resetPeak = useCallback(() => setResetKey((k) => k + 1), []);
   const jumpTest = useJumpTest({
     flightMetrics: flightTime,

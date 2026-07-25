@@ -25,9 +25,15 @@ const SUSTAIN_FRAMES = 3;
 // Peak flexion is the tightest (minimum) angle since the last reset — deepest
 // point of a jump landing. Only considered when a clear stance leg is detected
 // so a symmetric two-foot stance doesn't contaminate a one-leg measurement.
+// Pass pausePeakTracking=true (typically while airborne) to keep the current
+// angle updating for display but skip peak commits — during flight the raised
+// leg's drawn-up knee is often tighter than the jumping leg's, and stance
+// detection is unreliable, so peaks captured mid-air get attributed to the
+// wrong leg.
 export function useKneeFlexionMetrics(
   frame: PoseFrame | null,
   resetKey: number,
+  pausePeakTracking = false,
 ): KneeFlexionMetrics {
   const filterRef = useRef<OneEuroFilter>(createOneEuroFilter());
   const windowRef = useRef<number[]>([]);
@@ -37,6 +43,11 @@ export function useKneeFlexionMetrics(
     angle: null,
     timestamp: null,
   });
+  // Read via ref so the memo only re-runs per new frame; otherwise a pause
+  // toggle between frames would re-push the same smoothed angle into the
+  // sustain window.
+  const pauseRef = useRef(pausePeakTracking);
+  pauseRef.current = pausePeakTracking;
 
   useEffect(() => {
     filterRef.current.reset();
@@ -88,7 +99,7 @@ export function useKneeFlexionMetrics(
     win.push(smoothed);
     if (win.length > SUSTAIN_FRAMES) win.shift();
 
-    if (win.length === SUSTAIN_FRAMES) {
+    if (win.length === SUSTAIN_FRAMES && !pauseRef.current) {
       // Peak-candidate is the WORST (largest) angle in the window — i.e. the
       // best angle that has held across the whole window. A one-frame outlier
       // can't be the max of a window it doesn't dominate.
