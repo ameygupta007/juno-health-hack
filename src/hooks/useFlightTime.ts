@@ -8,6 +8,7 @@ import {
 } from '@/lib/flightTime';
 import type { PoseFrame } from '@/types/pose';
 import type { SupportLegMetrics } from '@/lib/supportLeg';
+import type { BodyMotionMetrics } from '@/lib/bodyMotion';
 
 type FlightTimeControls = {
   metrics: FlightTimeMetrics;
@@ -17,6 +18,7 @@ type FlightTimeControls = {
 export function useFlightTime(
   frame: PoseFrame | null,
   support: SupportLegMetrics,
+  motion: BodyMotionMetrics,
 ): FlightTimeControls {
   const trackerRef = useRef(createFlightTimeTracker());
   const [metrics, setMetrics] = useState(() =>
@@ -24,9 +26,14 @@ export function useFlightTime(
   );
 
   useEffect(() => {
-    trackerRef.current = updateFlightTime(trackerRef.current, frame, support);
+    trackerRef.current = updateFlightTime(
+      trackerRef.current,
+      frame,
+      support,
+      motion,
+    );
     setMetrics(toFlightTimeMetrics(trackerRef.current));
-  }, [frame, support]);
+  }, [frame, support, motion]);
 
   const reset = useCallback(() => {
     trackerRef.current = createFlightTimeTracker();

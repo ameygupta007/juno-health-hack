@@ -3,6 +3,7 @@ import {
   CONTACT_LEAVE_TORSO_RATIO,
   type SupportLegMetrics,
 } from '@/lib/supportLeg';
+import type { BodyMotionMetrics } from '@/lib/bodyMotion';
 import { POSE_LANDMARKS, type NormalizedLandmark, type PoseFrame } from '@/types/pose';
 
 export type FlightPhase = 'calibrating' | 'grounded' | 'airborne' | 'tracking-lost';
@@ -21,6 +22,7 @@ type FlightTimeTracker = FlightTimeMetrics & {
   landingCandidateAt: number | null;
   takeoffFrames: number;
   landingFrames: number;
+  lastJumpImpulseAt: number | null;
 };
 
 const MIN_VISIBILITY = 0.6;
@@ -39,16 +41,18 @@ export function createFlightTimeTracker(): FlightTimeTracker {
     landingCandidateAt: null,
     takeoffFrames: 0,
     landingFrames: 0,
+    lastJumpImpulseAt: null,
   };
 }
 
-// Airtime uses the same fixed, median-calibrated ground plane as support-leg
-// detection. Both anatomical toe tips must clear the leave threshold; landing
-// occurs when either toe returns inside the smaller contact threshold.
+// Takeoff combines a coordinated upward body impulse with the fixed foot plane.
+// This avoids depending on a single noisy toe while still requiring clearance
+// or a confirmed AIRBORNE contact state. Landing remains foot-contact based.
 export function updateFlightTime(
   previous: FlightTimeTracker,
   frame: PoseFrame | null,
   support: SupportLegMetrics,
+  motion: BodyMotionMetrics,
 ): FlightTimeTracker {
   if (!support.isCalibrated || support.groundY === null || support.bodyScale === null) {
     return {
@@ -61,31 +65,48 @@ export function updateFlightTime(
       landingCandidateAt: null,
       takeoffFrames: 0,
       landingFrames: 0,
+      lastJumpImpulseAt: null,
     };
   }
 
   if (!frame) return loseTracking(previous);
   const leftToe = frame.normalizedLandmarks[POSE_LANDMARKS.leftFootIndex];
   const rightToe = frame.normalizedLandmarks[POSE_LANDMARKS.rightFootIndex];
-  if (!visible(leftToe) || !visible(rightToe)) return loseTracking(previous);
 
   const next = {
     ...previous,
     calibrationProgress: 1,
   };
-  const leftClearance = support.groundY - leftToe.y;
-  const rightClearance = support.groundY - rightToe.y;
+  if (motion.jumpImpulse) next.lastJumpImpulseAt = frame.timestamp;
+  const hasRecentImpulse =
+    next.lastJumpImpulseAt !== null &&
+    frame.timestamp - next.lastJumpImpulseAt <= 450;
+  const leftGroundY =
+    support.leftToeGroundY ?? support.leftGroundY ?? support.groundY;
+  const rightGroundY =
+    support.rightToeGroundY ?? support.rightGroundY ?? support.groundY;
+  const toesVisible = visible(leftToe) && visible(rightToe);
+  const leftClearance = toesVisible ? leftGroundY - leftToe.y : 0;
+  const rightClearance = toesVisible ? rightGroundY - rightToe.y : 0;
   const takeoffThreshold = support.bodyScale * CONTACT_LEAVE_TORSO_RATIO;
   const landingThreshold = support.bodyScale * CONTACT_ENTER_TORSO_RATIO;
 
   if (next.airborneSince === null) {
     const bothToesClear =
-      leftClearance > takeoffThreshold && rightClearance > takeoffThreshold;
-    if (bothToesClear && next.takeoffFrames === 0) {
+      toesVisible &&
+      leftClearance > takeoffThreshold &&
+      rightClearance > takeoffThreshold;
+    const coordinatedRise =
+      motion.upwardVelocity > 0.2 && motion.upwardPointRatio >= 0.5;
+    const takeoffEvidence =
+      (hasRecentImpulse &&
+        (bothToesClear || support.state === 'AIRBORNE')) ||
+      (bothToesClear && coordinatedRise);
+    if (takeoffEvidence && next.takeoffFrames === 0) {
       next.takeoffCandidateSince = frame.timestamp;
     }
-    next.takeoffFrames = bothToesClear ? next.takeoffFrames + 1 : 0;
-    if (!bothToesClear) next.takeoffCandidateSince = null;
+    next.takeoffFrames = takeoffEvidence ? next.takeoffFrames + 1 : 0;
+    if (!takeoffEvidence) next.takeoffCandidateSince = null;
     next.landingFrames = 0;
     next.phase = 'grounded';
     next.currentFlightMs = 0;
@@ -103,12 +124,17 @@ export function updateFlightTime(
   next.phase = 'airborne';
   next.currentFlightMs = Math.max(0, frame.timestamp - next.airborneSince);
   const eitherToeLanded =
-    leftClearance <= landingThreshold || rightClearance <= landingThreshold;
-  if (eitherToeLanded && next.landingFrames === 0) {
+    support.leftContact === true ||
+    support.rightContact === true ||
+    (toesVisible &&
+      (leftClearance <= landingThreshold || rightClearance <= landingThreshold));
+  const minimumFlightElapsed = frame.timestamp - next.airborneSince >= 100;
+  if (eitherToeLanded && minimumFlightElapsed && next.landingFrames === 0) {
     next.landingCandidateAt = frame.timestamp;
   }
-  next.landingFrames = eitherToeLanded ? next.landingFrames + 1 : 0;
-  if (!eitherToeLanded) next.landingCandidateAt = null;
+  next.landingFrames =
+    eitherToeLanded && minimumFlightElapsed ? next.landingFrames + 1 : 0;
+  if (!eitherToeLanded || !minimumFlightElapsed) next.landingCandidateAt = null;
 
   if (next.landingFrames >= LANDING_CONFIRM_FRAMES) {
     const landingAt = next.landingCandidateAt ?? frame.timestamp;
@@ -143,6 +169,7 @@ function loseTracking(tracker: FlightTimeTracker): FlightTimeTracker {
     landingCandidateAt: null,
     takeoffFrames: 0,
     landingFrames: 0,
+    lastJumpImpulseAt: null,
   };
 }
 

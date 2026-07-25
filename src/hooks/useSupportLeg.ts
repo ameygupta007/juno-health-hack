@@ -57,12 +57,18 @@ export function useSupportLeg(
 
     const left = pipeline.left.update(
       frame.normalizedLandmarks,
-      calibration.groundY,
+      {
+        heel: calibration.leftHeelGroundY,
+        toe: calibration.leftToeGroundY,
+      },
       calibration.bodyScale,
     );
     const right = pipeline.right.update(
       frame.normalizedLandmarks,
-      calibration.groundY,
+      {
+        heel: calibration.rightHeelGroundY,
+        toe: calibration.rightToeGroundY,
+      },
       calibration.bodyScale,
     );
     pipeline.tracker.update(left, right, frame.timestamp);

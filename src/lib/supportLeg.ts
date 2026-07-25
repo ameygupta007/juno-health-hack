@@ -19,6 +19,10 @@ export type SupportLegMetrics = {
   leftFootVisibility: number;
   rightFootVisibility: number;
   groundY: number | null;
+  leftGroundY: number | null;
+  rightGroundY: number | null;
+  leftToeGroundY: number | null;
+  rightToeGroundY: number | null;
   groundScreenY: number | null;
   bodyScale: number | null;
   calibrationProgress: number;
@@ -36,19 +40,28 @@ const LOST_CONFIDENCE_FRAMES = 8;
 
 // Tune these two ratios to change foot-contact sensitivity. They are fractions
 // of shoulder-to-hip torso length, not raw image pixels.
-export const CONTACT_ENTER_TORSO_RATIO = 0.1;
-export const CONTACT_LEAVE_TORSO_RATIO = 0.14;
+export const CONTACT_ENTER_TORSO_RATIO = 0.035;
+export const CONTACT_LEAVE_TORSO_RATIO = 0.06;
 
 type Calibration = {
   groundY: number;
+  leftGroundY: number;
+  rightGroundY: number;
+  leftHeelGroundY: number;
+  leftToeGroundY: number;
+  rightHeelGroundY: number;
+  rightToeGroundY: number;
   groundScreenY: number;
   bodyScale: number;
 };
 
 export class GroundCalibrator {
   private groundSamples: number[] = [];
+  private leftGroundSamples: number[] = [];
+  private rightGroundSamples: number[] = [];
   private screenSamples: number[] = [];
   private scaleSamples: number[] = [];
+  private landmarkGroundSamples = new Map<number, number[]>();
   private validFrames = 0;
   private calibration: Calibration | null = null;
 
@@ -67,11 +80,18 @@ export class GroundCalibrator {
     const rightValid = footPairs[1].some((index) => visible(normalized[index]));
     if (!leftValid || !rightValid) return;
 
-    for (const [heelIndex, toeIndex] of footPairs) {
+    for (const [sideIndex, [heelIndex, toeIndex]] of footPairs.entries()) {
       for (const index of [heelIndex, toeIndex]) {
         const point = normalized[index];
         const screenPoint = frame.landmarks[index];
-        if (visible(point)) this.groundSamples.push(point.y);
+        if (visible(point)) {
+          this.groundSamples.push(point.y);
+          const samples = this.landmarkGroundSamples.get(index) ?? [];
+          samples.push(point.y);
+          this.landmarkGroundSamples.set(index, samples);
+          if (sideIndex === 0) this.leftGroundSamples.push(point.y);
+          if (sideIndex === 1) this.rightGroundSamples.push(point.y);
+        }
         if (visible(point) && screenPoint) this.screenSamples.push(screenPoint.y);
       }
     }
@@ -84,10 +104,18 @@ export class GroundCalibrator {
       this.validFrames >= CALIBRATION_FRAMES &&
       this.groundSamples.length > 0 &&
       this.screenSamples.length > 0 &&
-      this.scaleSamples.length > 0
+      this.scaleSamples.length > 0 &&
+      this.leftGroundSamples.length > 0 &&
+      this.rightGroundSamples.length > 0
     ) {
       this.calibration = {
         groundY: median(this.groundSamples),
+        leftGroundY: median(this.leftGroundSamples),
+        rightGroundY: median(this.rightGroundSamples),
+        leftHeelGroundY: this.landmarkMedian(POSE_LANDMARKS.leftHeel),
+        leftToeGroundY: this.landmarkMedian(POSE_LANDMARKS.leftFootIndex),
+        rightHeelGroundY: this.landmarkMedian(POSE_LANDMARKS.rightHeel),
+        rightToeGroundY: this.landmarkMedian(POSE_LANDMARKS.rightFootIndex),
         groundScreenY: median(this.screenSamples),
         bodyScale: median(this.scaleSamples),
       };
@@ -104,10 +132,20 @@ export class GroundCalibrator {
 
   reset(): void {
     this.groundSamples = [];
+    this.leftGroundSamples = [];
+    this.rightGroundSamples = [];
     this.screenSamples = [];
     this.scaleSamples = [];
+    this.landmarkGroundSamples.clear();
     this.validFrames = 0;
     this.calibration = null;
+  }
+
+  private landmarkMedian(index: number): number {
+    const samples = this.landmarkGroundSamples.get(index);
+    return samples && samples.length > 0
+      ? median(samples)
+      : median(this.groundSamples);
   }
 }
 
@@ -125,7 +163,7 @@ export class FootContactDetector {
 
   update(
     landmarks: NormalizedLandmark[],
-    groundY: number,
+    ground: { heel: number; toe: number },
     bodyScale: number,
   ): FootContact {
     const heel = landmarks[this.heelIndex];
@@ -161,6 +199,7 @@ export class FootContactDetector {
       const smoothedY =
         previous === undefined ? point.y : previous + EMA_ALPHA * (point.y - previous);
       this.smoothed.set(index, smoothedY);
+      const groundY = index === this.heelIndex ? ground.heel : ground.toe;
       return groundY - smoothedY;
     });
     const rawContact = clearances.some((clearance) => clearance <= threshold);
@@ -247,6 +286,10 @@ export class SupportLegTracker {
       leftFootVisibility: left.visibility,
       rightFootVisibility: right.visibility,
       groundY: calibration?.groundY ?? null,
+      leftGroundY: calibration?.leftGroundY ?? null,
+      rightGroundY: calibration?.rightGroundY ?? null,
+      leftToeGroundY: calibration?.leftToeGroundY ?? null,
+      rightToeGroundY: calibration?.rightToeGroundY ?? null,
       groundScreenY: calibration?.groundScreenY ?? null,
       bodyScale: calibration?.bodyScale ?? null,
       calibrationProgress,

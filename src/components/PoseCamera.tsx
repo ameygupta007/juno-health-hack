@@ -15,6 +15,7 @@ import { JumpTestOverlay } from '@/components/JumpTestOverlay';
 import { RecordableMediapipeCamera } from '@/components/RecordableMediapipeCamera';
 import { RecordingReview } from '@/components/RecordingReview';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
+import { useBodyMotion } from '@/hooks/useBodyMotion';
 import { useFlightTime } from '@/hooks/useFlightTime';
 import { useJumpTest } from '@/hooks/useJumpTest';
 import { useKneeFlexionMetrics } from '@/hooks/useKneeFlexionMetrics';
@@ -88,9 +89,15 @@ export function PoseCamera() {
         : null;
   const selectedSupportLeg =
     support.metrics.lockedSupportLeg ?? liveSupportLeg;
+  const bodyMotion = useBodyMotion(
+    frame,
+    support.metrics.bodyScale,
+    supportResetKey,
+  );
   const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(
     frame,
     support.metrics,
+    bodyMotion,
   );
   const knee = useKneeFlexionMetrics(
     frame,
@@ -225,6 +232,11 @@ export function PoseCamera() {
         <Text style={styles.hudText}>
           foot vis L {support.metrics.leftFootVisibility.toFixed(2)} · R{' '}
           {support.metrics.rightFootVisibility.toFixed(2)}
+        </Text>
+        <Text style={styles.hudText}>
+          rise v {bodyMotion.upwardVelocity.toFixed(2)} · a{' '}
+          {bodyMotion.upwardAcceleration.toFixed(2)} · points{' '}
+          {Math.round(bodyMotion.upwardPointRatio * 100)}%
         </Text>
         <Text style={styles.hudText}>
           {support.metrics.isCalibrated
