@@ -1,17 +1,21 @@
 import Svg, { Circle, Line } from 'react-native-svg';
 
+import { BALANCE_COLORS, type BalanceMetrics } from '@/lib/balance';
 import { POSE_CONNECTIONS, type PoseFrame } from '@/types/pose';
 
 type Props = {
   frame: PoseFrame | null;
   width: number;
   height: number;
+  balance?: BalanceMetrics;
 };
 
 const MIN_VISIBILITY = 0.5;
 
-export function PoseOverlay({ frame, width, height }: Props) {
+export function PoseOverlay({ frame, width, height, balance }: Props) {
   if (!frame) return null;
+
+  const skeletonColor = balance ? BALANCE_COLORS[balance.state] : '#4ade80';
 
   return (
     <Svg
@@ -32,7 +36,7 @@ export function PoseOverlay({ frame, width, height }: Props) {
             y1={p1.y}
             x2={p2.x}
             y2={p2.y}
-            stroke="#4ade80"
+            stroke={skeletonColor}
             strokeWidth={3}
             strokeLinecap="round"
           />
@@ -43,6 +47,32 @@ export function PoseOverlay({ frame, width, height }: Props) {
           <Circle key={`p-${i}`} cx={lm.x} cy={lm.y} r={4} fill="#f97316" />
         ),
       )}
+      {balance?.hipMidpoint && balance.ankleMidpoint ? (
+        <>
+          {/* Plumb line from center of mass down to the base of support. If
+              the line is vertical, weight is stacked; if it slants, the CoM
+              is drifting past the ankles. */}
+          <Line
+            x1={balance.hipMidpoint.x}
+            y1={balance.hipMidpoint.y}
+            x2={balance.ankleMidpoint.x}
+            y2={balance.ankleMidpoint.y}
+            stroke={skeletonColor}
+            strokeWidth={2}
+            strokeDasharray="6,4"
+            opacity={0.7}
+          />
+          <Circle cx={balance.hipMidpoint.x} cy={balance.hipMidpoint.y} r={6} fill={skeletonColor} />
+          <Circle
+            cx={balance.ankleMidpoint.x}
+            cy={balance.ankleMidpoint.y}
+            r={6}
+            fill="none"
+            stroke={skeletonColor}
+            strokeWidth={2}
+          />
+        </>
+      ) : null}
     </Svg>
   );
 }

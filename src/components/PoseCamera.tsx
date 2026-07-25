@@ -10,6 +10,8 @@ import {
 } from 'react-native-mediapipe';
 
 import { PoseOverlay } from '@/components/PoseOverlay';
+import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
+import { BALANCE_COLORS } from '@/lib/balance';
 import type { PoseFrame } from '@/types/pose';
 
 export function PoseCamera() {
@@ -50,15 +52,22 @@ export function PoseCamera() {
     { numPoses: 1, minPoseDetectionConfidence: 0.5 },
   );
 
+  const balance = useBalanceMetrics(frame);
   const { width, height } = detector.cameraViewDimensions;
 
   return (
     <View style={styles.container}>
       <MediapipeCamera style={styles.camera} solution={detector} activeCamera="front" />
-      <PoseOverlay frame={frame} width={width} height={height} />
+      <PoseOverlay frame={frame} width={width} height={height} balance={balance} />
       <View style={styles.hud} pointerEvents="none">
+        <Text style={[styles.hudBadge, { backgroundColor: BALANCE_COLORS[balance.state] }]}>
+          {balance.state.toUpperCase()}
+        </Text>
         <Text style={styles.hudText}>
-          {frame ? `${frame.landmarks.length} landmarks` : 'searching…'}
+          lean {balance.lateralOffset.toFixed(2)}  ·  tilt {balance.shoulderTiltDeg.toFixed(1)}°
+        </Text>
+        <Text style={styles.hudText}>
+          sway {balance.swayPx.toFixed(1)}px
         </Text>
       </View>
     </View>
@@ -72,10 +81,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
     left: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    gap: 4,
   },
-  hudText: { color: '#fff', fontSize: 12, fontVariant: ['tabular-nums'] },
+  hudBadge: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+  },
+  hudText: {
+    color: '#fff',
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
 });
