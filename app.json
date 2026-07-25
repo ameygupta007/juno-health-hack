@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Juno Health",
+    "slug": "juno-health-hack",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.juno.health.hack",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Juno uses the camera to track your body movement for guided health exercises."
+      }
+    },
+    "android": {
+      "package": "com.juno.health.hack",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Juno uses the camera to track your body movement for guided health exercises.",
+          "enableFrameProcessors": true
+        }
+      ],
+      "expo-asset"
+    ]
+  }
+}
