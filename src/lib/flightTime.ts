@@ -120,9 +120,15 @@ export function updateFlightTime(
       next.takeoffCandidateSince = null;
     } else if (!bothFeetUp) {
       // Slowly follow changes in framing while grounded, without allowing a
-      // crouch or a single noisy frame to move the floor abruptly.
-      next.leftGroundY = lerp(next.leftGroundY, leftAnkle.y, 0.025);
-      next.rightGroundY = lerp(next.rightGroundY, rightAnkle.y, 0.025);
+      // crouch or a single noisy frame to move the floor abruptly. Gate per
+      // foot on "actually planted" (rise near zero) so a raised leg during a
+      // one-leg stance can't drag its own floor upward.
+      if (leftRise < landingThreshold) {
+        next.leftGroundY = lerp(next.leftGroundY, leftAnkle.y, 0.025);
+      }
+      if (rightRise < landingThreshold) {
+        next.rightGroundY = lerp(next.rightGroundY, rightAnkle.y, 0.025);
+      }
     }
     return next;
   }
@@ -147,8 +153,12 @@ export function updateFlightTime(
     next.airborneSince = null;
     next.landingCandidateAt = null;
     next.landingFrames = 0;
-    next.leftGroundY = leftAnkle.y;
-    next.rightGroundY = rightAnkle.y;
+    // Only re-anchor a foot's ground if it appears to be at the floor. On a
+    // one-leg landing the non-landing foot is still raised — anchoring its
+    // ground to the raised position would break takeoff detection for the
+    // next jump on that leg.
+    if (leftRise < landingThreshold) next.leftGroundY = leftAnkle.y;
+    if (rightRise < landingThreshold) next.rightGroundY = rightAnkle.y;
   }
 
   return next;

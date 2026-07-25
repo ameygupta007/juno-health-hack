@@ -5,9 +5,10 @@ import {
   detectStanceLeg,
   type Leg,
 } from '@/lib/kneeFlexion';
+import { createOneEuroFilter, type OneEuroFilter } from '@/lib/oneEuroFilter';
 import type { PoseFrame } from '@/types/pose';
 
-type KneeFlexionMetrics = {
+export type KneeFlexionMetrics = {
   stanceLeg: Leg | null;
   airborneLeg: Leg | null;
   currentAngleDeg: number | null;
@@ -16,15 +17,21 @@ type KneeFlexionMetrics = {
   peakTimestamp: number | null;
 };
 
-// Peak flexion is the tightest (minimum) angle seen since the last reset —
-// deepest squat point during a jump landing. We only consider frames where a
-// clear stance leg is detected, so a symmetric two-foot stance doesn't
-// contaminate a one-leg-jump measurement. Peak is stored per-jump; whichever
-// leg registers the tightest angle wins peakLeg.
+// Sustain window: a new peak only commits when the last N smoothed angles all
+// sit at or below it. Guards against a single bad frame locking in an
+// unrealistically deep peak that never recovers.
+const SUSTAIN_FRAMES = 3;
+
+// Peak flexion is the tightest (minimum) angle since the last reset — deepest
+// point of a jump landing. Only considered when a clear stance leg is detected
+// so a symmetric two-foot stance doesn't contaminate a one-leg measurement.
 export function useKneeFlexionMetrics(
   frame: PoseFrame | null,
   resetKey: number,
 ): KneeFlexionMetrics {
+  const filterRef = useRef<OneEuroFilter>(createOneEuroFilter());
+  const windowRef = useRef<number[]>([]);
+  const prevLegRef = useRef<Leg | null>(null);
   const peakRef = useRef<{ leg: Leg | null; angle: number | null; timestamp: number | null }>({
     leg: null,
     angle: null,
@@ -32,42 +39,66 @@ export function useKneeFlexionMetrics(
   });
 
   useEffect(() => {
+    filterRef.current.reset();
+    windowRef.current = [];
+    prevLegRef.current = null;
     peakRef.current = { leg: null, angle: null, timestamp: null };
   }, [resetKey]);
 
   return useMemo(() => {
+    const peakSnapshot = () => ({
+      peakFlexionDeg: peakRef.current.angle,
+      peakLeg: peakRef.current.leg,
+      peakTimestamp: peakRef.current.timestamp,
+    });
+
     if (!frame) {
       return {
         stanceLeg: null,
         airborneLeg: null,
         currentAngleDeg: null,
-        peakFlexionDeg: peakRef.current.angle,
-        peakLeg: peakRef.current.leg,
-        peakTimestamp: peakRef.current.timestamp,
+        ...peakSnapshot(),
       };
     }
 
     const stanceLeg = detectStanceLeg(frame.normalizedLandmarks);
-    const { angleDeg } =
-      stanceLeg === null
-        ? { angleDeg: null }
-        : computeKneeFlexionDeg(frame.normalizedLandmarks, stanceLeg);
+    const airborneLeg =
+      stanceLeg === null ? null : stanceLeg === 'left' ? 'right' : 'left';
 
-    if (angleDeg !== null && stanceLeg !== null) {
+    // If the stance leg changes, the smoother's history is from a different
+    // angle series and would spuriously interpolate across the switch. Reset.
+    if (stanceLeg !== prevLegRef.current) {
+      filterRef.current.reset();
+      windowRef.current = [];
+      prevLegRef.current = stanceLeg;
+    }
+
+    if (stanceLeg === null) {
+      return { stanceLeg: null, airborneLeg: null, currentAngleDeg: null, ...peakSnapshot() };
+    }
+
+    const { angleDeg } = computeKneeFlexionDeg(frame.normalizedLandmarks, stanceLeg);
+    if (angleDeg === null) {
+      return { stanceLeg, airborneLeg, currentAngleDeg: null, ...peakSnapshot() };
+    }
+
+    const smoothed = filterRef.current.filter(angleDeg, frame.timestamp);
+
+    const win = windowRef.current;
+    win.push(smoothed);
+    if (win.length > SUSTAIN_FRAMES) win.shift();
+
+    if (win.length === SUSTAIN_FRAMES) {
+      // Peak-candidate is the WORST (largest) angle in the window — i.e. the
+      // best angle that has held across the whole window. A one-frame outlier
+      // can't be the max of a window it doesn't dominate.
+      const worst = Math.max(...win);
       const prev = peakRef.current.angle;
-      if (prev === null || angleDeg < prev) {
-        peakRef.current = { leg: stanceLeg, angle: angleDeg, timestamp: frame.timestamp };
+      if (prev === null || worst < prev) {
+        peakRef.current = { leg: stanceLeg, angle: worst, timestamp: frame.timestamp };
       }
     }
 
-    return {
-      stanceLeg,
-      airborneLeg:
-        stanceLeg === null ? null : stanceLeg === 'left' ? 'right' : 'left',
-      currentAngleDeg: angleDeg,
-      peakFlexionDeg: peakRef.current.angle,
-      peakLeg: peakRef.current.leg,
-      peakTimestamp: peakRef.current.timestamp,
-    };
+    return { stanceLeg, airborneLeg, currentAngleDeg: smoothed, ...peakSnapshot() };
   }, [frame]);
 }

@@ -11,8 +11,10 @@ import {
 
 import { PoseOverlay } from '@/components/PoseOverlay';
 import { FlightTimeHud } from '@/components/FlightTimeHud';
+import { JumpTestOverlay } from '@/components/JumpTestOverlay';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
 import { useFlightTime } from '@/hooks/useFlightTime';
+import { useJumpTest } from '@/hooks/useJumpTest';
 import { useKneeFlexionMetrics } from '@/hooks/useKneeFlexionMetrics';
 import { BALANCE_COLORS } from '@/lib/balance';
 import type { NormalizedLandmark, PoseFrame } from '@/types/pose';
@@ -69,6 +71,12 @@ export function PoseCamera() {
   const balance = useBalanceMetrics(frame);
   const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(frame);
   const knee = useKneeFlexionMetrics(frame, resetKey);
+  const resetPeak = useCallback(() => setResetKey((k) => k + 1), []);
+  const jumpTest = useJumpTest({
+    flightMetrics: flightTime,
+    kneeMetrics: knee,
+    onResetPeak: resetPeak,
+  });
   const { width, height } = detector.cameraViewDimensions;
 
   const stanceLabel = knee.stanceLeg === null ? '—' : knee.stanceLeg.toUpperCase();
@@ -76,10 +84,9 @@ export function PoseCamera() {
     knee.airborneLeg === null ? '—' : knee.airborneLeg.toUpperCase();
   const kneeCurrent =
     knee.currentAngleDeg === null ? '—' : `${knee.currentAngleDeg.toFixed(1)}°`;
-  const kneePeak =
-    knee.peakFlexionDeg === null
-      ? '—'
-      : `${knee.peakFlexionDeg.toFixed(1)}° (${knee.peakLeg ?? '—'})`;
+  const peakAngleText =
+    knee.peakFlexionDeg === null ? '—' : `${knee.peakFlexionDeg.toFixed(0)}°`;
+  const peakLegText = knee.peakLeg === null ? '' : knee.peakLeg.toUpperCase();
 
   return (
     <View style={styles.container}>
@@ -99,7 +106,12 @@ export function PoseCamera() {
         <Text style={styles.hudText}>stance {stanceLabel}</Text>
         <Text style={styles.hudText}>airborne {airborneLabel}</Text>
         <Text style={styles.hudText}>knee {kneeCurrent}</Text>
-        <Text style={styles.hudText}>peak {kneePeak}</Text>
+      </View>
+      <View style={styles.peakDisplayWrap} pointerEvents="none">
+        <View style={styles.peakDisplay}>
+          <Text style={styles.peakLabel}>PEAK FLEXION{peakLegText ? ` · ${peakLegText}` : ''}</Text>
+          <Text style={styles.peakValue}>{peakAngleText}</Text>
+        </View>
       </View>
       <View style={styles.hudActions}>
         <Pressable
@@ -107,13 +119,21 @@ export function PoseCamera() {
           accessibilityLabel="Reset all movement metrics"
           onPress={() => {
             resetFlightTime();
-            setResetKey((key) => key + 1);
+            resetPeak();
           }}
           style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
         >
           <Text style={styles.resetButtonText}>Reset all</Text>
         </Pressable>
       </View>
+      <JumpTestOverlay
+        state={jumpTest.state}
+        stanceLeg={knee.stanceLeg}
+        onStart={jumpTest.start}
+        onCancel={jumpTest.cancel}
+        onRestart={jumpTest.restart}
+        onClose={jumpTest.cancel}
+      />
     </View>
   );
 }
@@ -151,6 +171,33 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40,
     right: 20,
+  },
+  peakDisplayWrap: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  peakDisplay: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  peakLabel: {
+    color: '#67e8f9',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  peakValue: {
+    color: '#fff',
+    fontSize: 56,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    lineHeight: 62,
   },
   resetButton: {
     backgroundColor: 'rgba(0,0,0,0.55)',
