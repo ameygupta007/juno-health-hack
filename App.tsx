@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
 
-import { GameScreen } from '@/components/game/GameScreen';
+import { PoseCamera } from '@/components/PoseCamera';
 
 type PermissionState = 'pending' | 'granted' | 'denied';
 
@@ -23,7 +23,7 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="light" />
       {permission === 'granted' ? (
-        <GameScreen />
+        <PoseCamera />
       ) : (
         <View style={styles.message}>
           <Text style={styles.messageText}>
