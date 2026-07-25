@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   createFlightTimeTracker,
@@ -8,7 +8,12 @@ import {
 } from '@/lib/flightTime';
 import type { PoseFrame } from '@/types/pose';
 
-export function useFlightTime(frame: PoseFrame | null): FlightTimeMetrics {
+type FlightTimeControls = {
+  metrics: FlightTimeMetrics;
+  reset: () => void;
+};
+
+export function useFlightTime(frame: PoseFrame | null): FlightTimeControls {
   const trackerRef = useRef(createFlightTimeTracker());
   const [metrics, setMetrics] = useState(() =>
     toFlightTimeMetrics(trackerRef.current),
@@ -19,5 +24,10 @@ export function useFlightTime(frame: PoseFrame | null): FlightTimeMetrics {
     setMetrics(toFlightTimeMetrics(trackerRef.current));
   }, [frame]);
 
-  return metrics;
+  const reset = useCallback(() => {
+    trackerRef.current = createFlightTimeTracker();
+    setMetrics(toFlightTimeMetrics(trackerRef.current));
+  }, []);
+
+  return { metrics, reset };
 }

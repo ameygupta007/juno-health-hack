@@ -67,7 +67,7 @@ export function PoseCamera() {
   );
 
   const balance = useBalanceMetrics(frame);
-  const flightTime = useFlightTime(frame);
+  const { metrics: flightTime, reset: resetFlightTime } = useFlightTime(frame);
   const knee = useKneeFlexionMetrics(frame, resetKey);
   const { width, height } = detector.cameraViewDimensions;
 
@@ -100,10 +100,15 @@ export function PoseCamera() {
       </View>
       <View style={styles.hudActions}>
         <Pressable
-          onPress={() => setResetKey((k) => k + 1)}
+          accessibilityRole="button"
+          accessibilityLabel="Reset all movement metrics"
+          onPress={() => {
+            resetFlightTime();
+            setResetKey((key) => key + 1);
+          }}
           style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
         >
-          <Text style={styles.resetButtonText}>Reset peak</Text>
+          <Text style={styles.resetButtonText}>Reset all</Text>
         </Pressable>
       </View>
     </View>
