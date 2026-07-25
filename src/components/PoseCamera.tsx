@@ -10,7 +10,9 @@ import {
 } from 'react-native-mediapipe';
 
 import { PoseOverlay } from '@/components/PoseOverlay';
+import { FlightTimeHud } from '@/components/FlightTimeHud';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
+import { useFlightTime } from '@/hooks/useFlightTime';
 import { BALANCE_COLORS } from '@/lib/balance';
 import type { PoseFrame } from '@/types/pose';
 
@@ -53,12 +55,14 @@ export function PoseCamera() {
   );
 
   const balance = useBalanceMetrics(frame);
+  const flightTime = useFlightTime(frame);
   const { width, height } = detector.cameraViewDimensions;
 
   return (
     <View style={styles.container}>
       <MediapipeCamera style={styles.camera} solution={detector} activeCamera="front" />
       <PoseOverlay frame={frame} width={width} height={height} balance={balance} />
+      <FlightTimeHud metrics={flightTime} />
       <View style={styles.hud} pointerEvents="none">
         <Text style={[styles.hudBadge, { backgroundColor: BALANCE_COLORS[balance.state] }]}>
           {balance.state.toUpperCase()}
