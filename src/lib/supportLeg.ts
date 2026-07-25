@@ -10,6 +10,10 @@ export type SupportLegState =
 export type FootContact = {
   contact: boolean | null;
   visibility: number;
+  // Diagnostic values used only for debug logging.
+  minClearance: number | null;
+  threshold: number | null;
+  rawContact: boolean | null;
 };
 
 export type SupportLegMetrics = {
@@ -18,6 +22,11 @@ export type SupportLegMetrics = {
   rightContact: boolean | null;
   leftFootVisibility: number;
   rightFootVisibility: number;
+  leftRawContact: boolean | null;
+  rightRawContact: boolean | null;
+  leftClearance: number | null;
+  rightClearance: number | null;
+  contactThreshold: number | null;
   groundY: number | null;
   leftGroundY: number | null;
   rightGroundY: number | null;
@@ -185,6 +194,9 @@ export class FootContactDetector {
             ? this.stableContact
             : null,
         visibility,
+        minClearance: null,
+        threshold: null,
+        rawContact: null,
       };
     }
 
@@ -215,7 +227,13 @@ export class FootContactDetector {
       this.stableContact = rawContact;
     }
 
-    return { contact: this.stableContact, visibility };
+    return {
+      contact: this.stableContact,
+      visibility,
+      minClearance: Math.min(...clearances),
+      threshold,
+      rawContact,
+    };
   }
 
   reset(): void {
@@ -285,6 +303,11 @@ export class SupportLegTracker {
       rightContact: right.contact,
       leftFootVisibility: left.visibility,
       rightFootVisibility: right.visibility,
+      leftRawContact: left.rawContact,
+      rightRawContact: right.rawContact,
+      leftClearance: left.minClearance,
+      rightClearance: right.minClearance,
+      contactThreshold: left.threshold ?? right.threshold ?? null,
       groundY: calibration?.groundY ?? null,
       leftGroundY: calibration?.leftGroundY ?? null,
       rightGroundY: calibration?.rightGroundY ?? null,
