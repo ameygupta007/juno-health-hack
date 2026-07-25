@@ -3,12 +3,16 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
 
+import { HomeScreen } from '@/components/HomeScreen';
 import { GameScreen } from '@/components/game/GameScreen';
+import { RailGrindScreen } from '@/components/game/RailGrindScreen';
 
 type PermissionState = 'pending' | 'granted' | 'denied';
+type Screen = 'home' | 'starfall' | 'rail';
 
 export default function App() {
   const [permission, setPermission] = useState<PermissionState>('pending');
+  const [screen, setScreen] = useState<Screen>('home');
 
   useEffect(() => {
     (async () => {
@@ -19,11 +23,19 @@ export default function App() {
     })();
   }, []);
 
+  const goHome = () => setScreen('home');
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       {permission === 'granted' ? (
-        <GameScreen />
+        screen === 'home' ? (
+          <HomeScreen onSelect={setScreen} />
+        ) : screen === 'starfall' ? (
+          <GameScreen onExit={goHome} />
+        ) : (
+          <RailGrindScreen onExit={goHome} />
+        )
       ) : (
         <View style={styles.message}>
           <Text style={styles.messageText}>

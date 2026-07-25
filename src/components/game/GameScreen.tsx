@@ -19,7 +19,11 @@ import type { Phase } from '@/game/types';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
 import type { PoseFrame } from '@/types/pose';
 
-export function GameScreen() {
+type Props = {
+  onExit: () => void;
+};
+
+export function GameScreen({ onExit }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: 'menu' });
   const [frame, setFrame] = useState<PoseFrame | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -117,6 +121,8 @@ export function GameScreen() {
           body="The village of Nirin has fallen dark. The seven great Constellations have scattered across the heavens. Reach for the stars — gather their light with your hands, stay balanced, and restore the sky one constellation at a time."
           primaryLabel="Begin"
           onPrimary={() => setPhase({ kind: 'intro', chapterIndex: 0 })}
+          secondaryLabel="Back to menu"
+          onSecondary={onExit}
         />
       ) : null}
 
@@ -164,7 +170,7 @@ export function GameScreen() {
           title="The Sky is Whole"
           body={EPILOGUE}
           primaryLabel="Return home"
-          onPrimary={() => setPhase({ kind: 'menu' })}
+          onPrimary={onExit}
         />
       ) : null}
     </View>
