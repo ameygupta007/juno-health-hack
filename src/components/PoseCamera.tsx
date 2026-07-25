@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   MediapipeCamera,
   RunningMode,
@@ -13,11 +13,13 @@ import { PoseOverlay } from '@/components/PoseOverlay';
 import { FlightTimeHud } from '@/components/FlightTimeHud';
 import { useBalanceMetrics } from '@/hooks/useBalanceMetrics';
 import { useFlightTime } from '@/hooks/useFlightTime';
+import { useKneeFlexionMetrics } from '@/hooks/useKneeFlexionMetrics';
 import { BALANCE_COLORS } from '@/lib/balance';
-import type { PoseFrame } from '@/types/pose';
+import type { NormalizedLandmark, PoseFrame } from '@/types/pose';
 
 export function PoseCamera() {
   const [frame, setFrame] = useState<PoseFrame | null>(null);
+  const [resetKey, setResetKey] = useState(0);
 
   const onResults = useCallback(
     (results: PoseDetectionResultBundle, coordinator: ViewCoordinator) => {
@@ -28,6 +30,12 @@ export function PoseCamera() {
       }
 
       const frameDims = coordinator.getFrameDims(results);
+      const normalized: NormalizedLandmark[] = landmarks.map((lm) => ({
+        x: lm.x,
+        y: lm.y,
+        z: lm.z,
+        visibility: lm.visibility ?? 1,
+      }));
       const mapped = landmarks.map((lm) => {
         const point = coordinator.convertPoint(frameDims, { x: lm.x, y: lm.y });
         return {
@@ -38,7 +46,11 @@ export function PoseCamera() {
         };
       });
 
-      setFrame({ landmarks: mapped, timestamp: Date.now() });
+      setFrame({
+        landmarks: mapped,
+        normalizedLandmarks: normalized,
+        timestamp: Date.now(),
+      });
     },
     [],
   );
@@ -56,7 +68,16 @@ export function PoseCamera() {
 
   const balance = useBalanceMetrics(frame);
   const flightTime = useFlightTime(frame);
+  const knee = useKneeFlexionMetrics(frame, resetKey);
   const { width, height } = detector.cameraViewDimensions;
+
+  const stanceLabel = knee.stanceLeg === null ? '—' : knee.stanceLeg.toUpperCase();
+  const kneeCurrent =
+    knee.currentAngleDeg === null ? '—' : `${knee.currentAngleDeg.toFixed(1)}°`;
+  const kneePeak =
+    knee.peakFlexionDeg === null
+      ? '—'
+      : `${knee.peakFlexionDeg.toFixed(1)}° (${knee.peakLeg ?? '—'})`;
 
   return (
     <View style={styles.container}>
@@ -73,6 +94,17 @@ export function PoseCamera() {
         <Text style={styles.hudText}>
           sway {balance.swayPx.toFixed(1)}px
         </Text>
+        <Text style={styles.hudText}>stance {stanceLabel}</Text>
+        <Text style={styles.hudText}>knee {kneeCurrent}</Text>
+        <Text style={styles.hudText}>peak {kneePeak}</Text>
+      </View>
+      <View style={styles.hudActions}>
+        <Pressable
+          onPress={() => setResetKey((k) => k + 1)}
+          style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
+        >
+          <Text style={styles.resetButtonText}>Reset peak</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -106,5 +138,24 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     alignSelf: 'flex-start',
+  },
+  hudActions: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+  },
+  resetButton: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  resetButtonPressed: {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
