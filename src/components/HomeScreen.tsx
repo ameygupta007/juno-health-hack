@@ -1,12 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ModeCard } from '@/components/home/ModeCard';
 import { Starfield } from '@/components/home/Starfield';
 
-type Game = 'jump' | 'rail';
+type Screen = 'jump' | 'rail' | 'progress';
 
 type Props = {
-  onSelect: (game: Game) => void;
+  onSelect: (screen: Screen) => void;
 };
 
 export function HomeScreen({ onSelect }: Props) {
@@ -40,6 +40,15 @@ export function HomeScreen({ onSelect }: Props) {
       </View>
 
       <Text style={styles.footer}>Tap a mode to begin</Text>
+
+      <Pressable
+        onPress={() => onSelect('progress')}
+        accessibilityRole="button"
+        accessibilityLabel="For clinicians. View patient progress."
+        style={styles.clinicianPill}
+      >
+        <Text style={styles.clinicianLabel}>For clinicians · View progress</Text>
+      </Pressable>
     </View>
   );
 }
@@ -83,5 +92,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
     textAlign: 'center',
+  },
+  clinicianPill: {
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  clinicianLabel: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });

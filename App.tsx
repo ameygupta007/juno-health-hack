@@ -5,10 +5,11 @@ import { Camera } from 'react-native-vision-camera';
 
 import { HomeScreen } from '@/components/HomeScreen';
 import { PoseCamera } from '@/components/PoseCamera';
+import { ProgressScreen } from '@/components/dashboard/ProgressScreen';
 import { RailGrindScreen } from '@/components/game/RailGrindScreen';
 
 type PermissionState = 'pending' | 'granted' | 'denied';
-type Screen = 'home' | 'jump' | 'rail';
+type Screen = 'home' | 'jump' | 'rail' | 'progress';
 
 export default function App() {
   const [permission, setPermission] = useState<PermissionState>('pending');
@@ -33,8 +34,10 @@ export default function App() {
           <HomeScreen onSelect={setScreen} />
         ) : screen === 'jump' ? (
           <PoseCamera onExit={goHome} />
-        ) : (
+        ) : screen === 'rail' ? (
           <RailGrindScreen onExit={goHome} />
+        ) : (
+          <ProgressScreen onExit={goHome} />
         )
       ) : (
         <View style={styles.message}>

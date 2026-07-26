@@ -1,0 +1,594 @@
+[
+  {
+    "id": "p1",
+    "name": "Alex Rivera",
+    "procedure": "ACL reconstruction — left knee",
+    "weeksInProgram": 12,
+    "sessions": [
+      {
+        "week": 1,
+        "jump": {
+          "leftFlightMs": 258,
+          "rightFlightMs": 407,
+          "leftPeakFlexionDeg": 89,
+          "rightPeakFlexionDeg": 120
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 4725,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 2,
+        "jump": {
+          "leftFlightMs": 279,
+          "rightFlightMs": 410,
+          "leftPeakFlexionDeg": 91,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 6419,
+          "eventCount": 2,
+          "fatigue": true
+        }
+      },
+      {
+        "week": 3,
+        "jump": {
+          "leftFlightMs": 279,
+          "rightFlightMs": 404,
+          "leftPeakFlexionDeg": 93,
+          "rightPeakFlexionDeg": 117
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 1,
+          "bestStreakMs": 6267,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 4,
+        "jump": {
+          "leftFlightMs": 294,
+          "rightFlightMs": 404,
+          "leftPeakFlexionDeg": 99,
+          "rightPeakFlexionDeg": 119
+        },
+        "rail": {
+          "score": 2,
+          "wipeouts": 1,
+          "bestStreakMs": 12768,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 5,
+        "jump": {
+          "leftFlightMs": 332,
+          "rightFlightMs": 425,
+          "leftPeakFlexionDeg": 95,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 71,
+          "wipeouts": 1,
+          "bestStreakMs": 15410,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 6,
+        "jump": {
+          "leftFlightMs": 351,
+          "rightFlightMs": 408,
+          "leftPeakFlexionDeg": 100,
+          "rightPeakFlexionDeg": 114
+        },
+        "rail": {
+          "score": 77,
+          "wipeouts": 1,
+          "bestStreakMs": 15938,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 7,
+        "jump": {
+          "leftFlightMs": 364,
+          "rightFlightMs": 410,
+          "leftPeakFlexionDeg": 104,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 144,
+          "wipeouts": 1,
+          "bestStreakMs": 21980,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 8,
+        "jump": {
+          "leftFlightMs": 359,
+          "rightFlightMs": 415,
+          "leftPeakFlexionDeg": 114,
+          "rightPeakFlexionDeg": 120
+        },
+        "rail": {
+          "score": 137,
+          "wipeouts": 1,
+          "bestStreakMs": 21348,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 9,
+        "jump": {
+          "leftFlightMs": 372,
+          "rightFlightMs": 415,
+          "leftPeakFlexionDeg": 108,
+          "rightPeakFlexionDeg": 116
+        },
+        "rail": {
+          "score": 140,
+          "wipeouts": 1,
+          "bestStreakMs": 21564,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 10,
+        "jump": {
+          "leftFlightMs": 414,
+          "rightFlightMs": 430,
+          "leftPeakFlexionDeg": 112,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 310,
+          "wipeouts": 0,
+          "bestStreakMs": 27928,
+          "eventCount": 0,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 11,
+        "jump": {
+          "leftFlightMs": 407,
+          "rightFlightMs": 427,
+          "leftPeakFlexionDeg": 122,
+          "rightPeakFlexionDeg": 121
+        },
+        "rail": {
+          "score": 337,
+          "wipeouts": 0,
+          "bestStreakMs": 30353,
+          "eventCount": 0,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 12,
+        "jump": {
+          "leftFlightMs": 409,
+          "rightFlightMs": 409,
+          "leftPeakFlexionDeg": 114,
+          "rightPeakFlexionDeg": 117
+        },
+        "rail": {
+          "score": 376,
+          "wipeouts": 0,
+          "bestStreakMs": 33883,
+          "eventCount": 0,
+          "fatigue": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "p2",
+    "name": "Sam Okafor",
+    "procedure": "Meniscus repair — left knee",
+    "weeksInProgram": 10,
+    "sessions": [
+      {
+        "week": 1,
+        "jump": {
+          "leftFlightMs": 249,
+          "rightFlightMs": 407,
+          "leftPeakFlexionDeg": 90,
+          "rightPeakFlexionDeg": 122
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 1,
+          "bestStreakMs": 5024,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 2,
+        "jump": {
+          "leftFlightMs": 294,
+          "rightFlightMs": 412,
+          "leftPeakFlexionDeg": 92,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 1,
+          "bestStreakMs": 6601,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 3,
+        "jump": {
+          "leftFlightMs": 312,
+          "rightFlightMs": 406,
+          "leftPeakFlexionDeg": 98,
+          "rightPeakFlexionDeg": 122
+        },
+        "rail": {
+          "score": 79,
+          "wipeouts": 0,
+          "bestStreakMs": 10745,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 4,
+        "jump": {
+          "leftFlightMs": 362,
+          "rightFlightMs": 428,
+          "leftPeakFlexionDeg": 100,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 30,
+          "wipeouts": 1,
+          "bestStreakMs": 11723,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 5,
+        "jump": {
+          "leftFlightMs": 331,
+          "rightFlightMs": 412,
+          "leftPeakFlexionDeg": 104,
+          "rightPeakFlexionDeg": 122
+        },
+        "rail": {
+          "score": 106,
+          "wipeouts": 1,
+          "bestStreakMs": 18513,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 6,
+        "jump": {
+          "leftFlightMs": 354,
+          "rightFlightMs": 430,
+          "leftPeakFlexionDeg": 99,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 146,
+          "wipeouts": 1,
+          "bestStreakMs": 22183,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 7,
+        "jump": {
+          "leftFlightMs": 328,
+          "rightFlightMs": 407,
+          "leftPeakFlexionDeg": 108,
+          "rightPeakFlexionDeg": 121
+        },
+        "rail": {
+          "score": 213,
+          "wipeouts": 0,
+          "bestStreakMs": 22805,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 8,
+        "jump": {
+          "leftFlightMs": 375,
+          "rightFlightMs": 437,
+          "leftPeakFlexionDeg": 103,
+          "rightPeakFlexionDeg": 120
+        },
+        "rail": {
+          "score": 177,
+          "wipeouts": 1,
+          "bestStreakMs": 24966,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 9,
+        "jump": {
+          "leftFlightMs": 355,
+          "rightFlightMs": 417,
+          "leftPeakFlexionDeg": 108,
+          "rightPeakFlexionDeg": 121
+        },
+        "rail": {
+          "score": 238,
+          "wipeouts": 1,
+          "bestStreakMs": 30433,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 10,
+        "jump": {
+          "leftFlightMs": 357,
+          "rightFlightMs": 426,
+          "leftPeakFlexionDeg": 100,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 279,
+          "wipeouts": 1,
+          "bestStreakMs": 34084,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "p3",
+    "name": "Jordan Blake",
+    "procedure": "Patellar tendinopathy — left knee",
+    "weeksInProgram": 9,
+    "sessions": [
+      {
+        "week": 1,
+        "jump": {
+          "leftFlightMs": 281,
+          "rightFlightMs": 436,
+          "leftPeakFlexionDeg": 89,
+          "rightPeakFlexionDeg": 120
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 3,
+          "bestStreakMs": 2214,
+          "eventCount": 3,
+          "fatigue": true
+        }
+      },
+      {
+        "week": 2,
+        "jump": {
+          "leftFlightMs": 288,
+          "rightFlightMs": 408,
+          "leftPeakFlexionDeg": 90,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 4004,
+          "eventCount": 4,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 3,
+        "jump": {
+          "leftFlightMs": 258,
+          "rightFlightMs": 403,
+          "leftPeakFlexionDeg": 87,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 3,
+          "bestStreakMs": 9463,
+          "eventCount": 3,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 4,
+        "jump": {
+          "leftFlightMs": 266,
+          "rightFlightMs": 412,
+          "leftPeakFlexionDeg": 84,
+          "rightPeakFlexionDeg": 116
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 14140,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 5,
+        "jump": {
+          "leftFlightMs": 319,
+          "rightFlightMs": 428,
+          "leftPeakFlexionDeg": 96,
+          "rightPeakFlexionDeg": 122
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 18935,
+          "eventCount": 3,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 6,
+        "jump": {
+          "leftFlightMs": 290,
+          "rightFlightMs": 407,
+          "leftPeakFlexionDeg": 93,
+          "rightPeakFlexionDeg": 114
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 21239,
+          "eventCount": 4,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 7,
+        "jump": {
+          "leftFlightMs": 301,
+          "rightFlightMs": 437,
+          "leftPeakFlexionDeg": 84,
+          "rightPeakFlexionDeg": 115
+        },
+        "rail": {
+          "score": 19,
+          "wipeouts": 2,
+          "bestStreakMs": 23347,
+          "eventCount": 3,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 8,
+        "jump": {
+          "leftFlightMs": 329,
+          "rightFlightMs": 435,
+          "leftPeakFlexionDeg": 96,
+          "rightPeakFlexionDeg": 119
+        },
+        "rail": {
+          "score": 124,
+          "wipeouts": 2,
+          "bestStreakMs": 29171,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 9,
+        "jump": {
+          "leftFlightMs": 325,
+          "rightFlightMs": 411,
+          "leftPeakFlexionDeg": 102,
+          "rightPeakFlexionDeg": 120
+        },
+        "rail": {
+          "score": 56,
+          "wipeouts": 2,
+          "bestStreakMs": 26657,
+          "eventCount": 3,
+          "fatigue": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "p4",
+    "name": "Priya Nandakumar",
+    "procedure": "ACL reconstruction — left knee",
+    "weeksInProgram": 4,
+    "sessions": [
+      {
+        "week": 1,
+        "jump": {
+          "leftFlightMs": 255,
+          "rightFlightMs": 415,
+          "leftPeakFlexionDeg": 86,
+          "rightPeakFlexionDeg": 121
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 2,
+          "bestStreakMs": 5547,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 2,
+        "jump": {
+          "leftFlightMs": 305,
+          "rightFlightMs": 411,
+          "leftPeakFlexionDeg": 86,
+          "rightPeakFlexionDeg": 116
+        },
+        "rail": {
+          "score": 0,
+          "wipeouts": 1,
+          "bestStreakMs": 12530,
+          "eventCount": 2,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 3,
+        "jump": {
+          "leftFlightMs": 325,
+          "rightFlightMs": 428,
+          "leftPeakFlexionDeg": 96,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 155,
+          "wipeouts": 1,
+          "bestStreakMs": 22909,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      },
+      {
+        "week": 4,
+        "jump": {
+          "leftFlightMs": 326,
+          "rightFlightMs": 412,
+          "leftPeakFlexionDeg": 97,
+          "rightPeakFlexionDeg": 118
+        },
+        "rail": {
+          "score": 229,
+          "wipeouts": 1,
+          "bestStreakMs": 29611,
+          "eventCount": 1,
+          "fatigue": false
+        }
+      }
+    ]
+  }
+]
