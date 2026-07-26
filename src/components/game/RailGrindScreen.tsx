@@ -43,11 +43,17 @@ export function RailGrindScreen({ onExit }: Props) {
         return;
       }
       const frameDims = coordinator.getFrameDims(results);
+      const normalizedLandmarks = landmarks.map((lm) => ({
+        x: lm.x,
+        y: lm.y,
+        z: lm.z,
+        visibility: lm.visibility ?? 1,
+      }));
       const mapped = landmarks.map((lm) => {
         const p = coordinator.convertPoint(frameDims, { x: lm.x, y: lm.y });
         return { x: p.x, y: p.y, z: lm.z, visibility: lm.visibility ?? 1 };
       });
-      setFrame({ landmarks: mapped, timestamp: Date.now() });
+      setFrame({ landmarks: mapped, normalizedLandmarks, timestamp: Date.now() });
     },
     [],
   );

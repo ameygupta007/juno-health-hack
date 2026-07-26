@@ -4,11 +4,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
 
 import { HomeScreen } from '@/components/HomeScreen';
-import { GameScreen } from '@/components/game/GameScreen';
+import { PoseCamera } from '@/components/PoseCamera';
 import { RailGrindScreen } from '@/components/game/RailGrindScreen';
 
 type PermissionState = 'pending' | 'granted' | 'denied';
-type Screen = 'home' | 'starfall' | 'rail';
+type Screen = 'home' | 'jump' | 'rail';
 
 export default function App() {
   const [permission, setPermission] = useState<PermissionState>('pending');
@@ -31,8 +31,8 @@ export default function App() {
       {permission === 'granted' ? (
         screen === 'home' ? (
           <HomeScreen onSelect={setScreen} />
-        ) : screen === 'starfall' ? (
-          <GameScreen onExit={goHome} />
+        ) : screen === 'jump' ? (
+          <PoseCamera onExit={goHome} />
         ) : (
           <RailGrindScreen onExit={goHome} />
         )

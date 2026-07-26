@@ -15,8 +15,19 @@ export type ScreenLandmark = {
   visibility: number;
 };
 
+// Raw MediaPipe landmark: x, y, z all in normalized image-width units. Kept
+// alongside the projected pixel landmarks because 3D angle math needs
+// consistent units across all axes (pixel-space y with normalized z is wrong).
+export type NormalizedLandmark = {
+  x: number;
+  y: number;
+  z: number;
+  visibility: number;
+};
+
 export type PoseFrame = {
   landmarks: ScreenLandmark[];
+  normalizedLandmarks: NormalizedLandmark[];
   timestamp: number;
 };
 

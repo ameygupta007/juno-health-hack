@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-type Game = 'starfall' | 'rail';
+type Game = 'jump' | 'rail';
 
 type Props = {
   onSelect: (game: Game) => void;
@@ -12,12 +12,12 @@ export function HomeScreen({ onSelect }: Props) {
       <Text style={styles.eyebrow}>JUNO HEALTH</Text>
       <Text style={styles.title}>Choose your session</Text>
 
-      <Pressable style={[styles.card, styles.starfallCard]} onPress={() => onSelect('starfall')}>
-        <Text style={[styles.cardEyebrow, styles.starfallEyebrow]}>REACH · BALANCE</Text>
-        <Text style={styles.cardTitle}>Starfall</Text>
+      <Pressable style={[styles.card, styles.starfallCard]} onPress={() => onSelect('jump')}>
+        <Text style={[styles.cardEyebrow, styles.starfallEyebrow]}>FLIGHT TIME · KNEE FLEXION</Text>
+        <Text style={styles.cardTitle}>Jump Test</Text>
         <Text style={styles.cardBody}>
-          Gather falling stars with your hands while holding your center. A story-driven
-          reach-and-balance journey across three constellations.
+          Take a guided one-leg jump test. We track flight time, landing stance, and peak
+          knee flexion in real time.
         </Text>
       </Pressable>
 
