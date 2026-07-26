@@ -23,7 +23,11 @@ import { useSupportLeg } from '@/hooks/useSupportLeg';
 import { BALANCE_COLORS } from '@/lib/balance';
 import type { NormalizedLandmark, PoseFrame } from '@/types/pose';
 
-export function PoseCamera() {
+type Props = {
+  onExit?: () => void;
+};
+
+export function PoseCamera({ onExit }: Props = {}) {
   const [frame, setFrame] = useState<PoseFrame | null>(null);
   const [peakResetKey, setPeakResetKey] = useState(0);
   const [supportResetKey, setSupportResetKey] = useState(0);
@@ -252,6 +256,18 @@ export function PoseCamera() {
           <Text style={styles.peakValue}>{peakAngleText}</Text>
         </View>
       </View>
+      {onExit ? (
+        <View style={styles.exitButtonWrap}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to menu"
+            onPress={onExit}
+            style={({ pressed }) => [styles.resetButton, pressed && styles.resetButtonPressed]}
+          >
+            <Text style={styles.resetButtonText}>Back</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={styles.hudActions}>
         <Pressable
           accessibilityRole="button"
@@ -317,6 +333,11 @@ const styles = StyleSheet.create({
   hudActions: {
     position: 'absolute',
     bottom: 40,
+    right: 20,
+  },
+  exitButtonWrap: {
+    position: 'absolute',
+    top: 60,
     right: 20,
   },
   peakDisplayWrap: {
