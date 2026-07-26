@@ -1,4 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { ModeCard } from '@/components/home/ModeCard';
+import { Starfield } from '@/components/home/Starfield';
 
 type Game = 'jump' | 'rail';
 
@@ -9,26 +12,36 @@ type Props = {
 export function HomeScreen({ onSelect }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>JUNO HEALTH</Text>
-      <Text style={styles.title}>Choose your session</Text>
+      <Starfield />
 
-      <Pressable style={[styles.card, styles.starfallCard]} onPress={() => onSelect('jump')}>
-        <Text style={[styles.cardEyebrow, styles.starfallEyebrow]}>FLIGHT TIME · KNEE FLEXION</Text>
-        <Text style={styles.cardTitle}>Jump Test</Text>
-        <Text style={styles.cardBody}>
-          Take a guided one-leg jump test. We track flight time, landing stance, and peak
-          knee flexion in real time.
-        </Text>
-      </Pressable>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.wordmark}>JUNO</Text>
+          <Text style={styles.eyebrow}>H E A L T H</Text>
+          <Text style={styles.prompt}>Choose how you&apos;ll move today</Text>
+        </View>
 
-      <Pressable style={[styles.card, styles.railCard]} onPress={() => onSelect('rail')}>
-        <Text style={[styles.cardEyebrow, styles.railEyebrow]}>SINGLE-LEG SQUAT · JOINT ALIGNMENT</Text>
-        <Text style={styles.cardTitle}>Rail Grind Pro</Text>
-        <Text style={styles.cardBody}>
-          Hold a single-leg squat and grind down the rail. Keep your knee stacked over your
-          ankle — collapse inward and you wipe out.
-        </Text>
-      </Pressable>
+        <View style={styles.cards}>
+          <ModeCard
+            accent="amber"
+            eyebrow="FLIGHT TIME · KNEE FLEXION"
+            title="Jump Test"
+            body="Take a guided one-leg jump test. We track flight time, landing stance, and peak knee flexion in real time."
+            glyph="star"
+            onPress={() => onSelect('jump')}
+          />
+          <ModeCard
+            accent="sky"
+            eyebrow="SINGLE-LEG SQUAT · ALIGNMENT"
+            title="Rail Grind Pro"
+            body="Hold a single-leg squat and grind down the rail. Keep your knee stacked over your ankle."
+            glyph="rail"
+            onPress={() => onSelect('rail')}
+          />
+        </View>
+
+        <Text style={styles.footer}>Tap a mode to begin</Text>
+      </View>
     </View>
   );
 }
@@ -37,29 +50,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#030714',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     padding: 24,
-    gap: 16,
+    gap: 28,
+  },
+  header: {
+    alignItems: 'center',
+  },
+  wordmark: {
+    color: '#f8fafc',
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: 6,
   },
   eyebrow: {
-    color: '#94a3b8',
+    color: '#7c8aa5',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 3,
+    marginTop: 4,
+  },
+  prompt: {
+    color: '#cbd5e1',
+    fontSize: 15,
+    marginTop: 16,
     textAlign: 'center',
   },
-  title: { color: '#fff', fontSize: 26, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
-  card: {
-    backgroundColor: 'rgba(15, 23, 42, 0.92)',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
+  cards: {
+    gap: 22,
   },
-  starfallCard: { borderColor: 'rgba(251, 191, 36, 0.35)' },
-  railCard: { borderColor: 'rgba(56, 189, 248, 0.35)' },
-  cardEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 4 },
-  starfallEyebrow: { color: '#fbbf24' },
-  railEyebrow: { color: '#38bdf8' },
-  cardTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 10 },
-  cardBody: { color: '#cbd5e1', fontSize: 14, lineHeight: 20 },
+  footer: {
+    color: '#7c8aa5',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
 });
