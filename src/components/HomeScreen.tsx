@@ -14,32 +14,34 @@ export function HomeScreen({ onSelect }: Props) {
     <View style={styles.container}>
       <Starfield />
 
-      <View style={styles.header}>
-        <Text style={styles.wordmark}>JUNO</Text>
-        <Text style={styles.eyebrow}>H E A L T H</Text>
-        <Text style={styles.prompt}>Choose how you&apos;ll move today</Text>
-      </View>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.wordmark}>JUNO</Text>
+          <Text style={styles.eyebrow}>H E A L T H</Text>
+          <Text style={styles.prompt}>Choose how you&apos;ll move today</Text>
+        </View>
 
-      <View style={styles.cards}>
-        <ModeCard
-          accent="amber"
-          eyebrow="FLIGHT TIME · KNEE FLEXION"
-          title="Jump Test"
-          body="Take a guided one-leg jump test. We track flight time, landing stance, and peak knee flexion in real time."
-          glyph="star"
-          onPress={() => onSelect('jump')}
-        />
-        <ModeCard
-          accent="sky"
-          eyebrow="SINGLE-LEG SQUAT · ALIGNMENT"
-          title="Rail Grind Pro"
-          body="Hold a single-leg squat and grind down the rail. Keep your knee stacked over your ankle."
-          glyph="rail"
-          onPress={() => onSelect('rail')}
-        />
-      </View>
+        <View style={styles.cards}>
+          <ModeCard
+            accent="amber"
+            eyebrow="FLIGHT TIME · KNEE FLEXION"
+            title="Jump Test"
+            body="Take a guided one-leg jump test. We track flight time, landing stance, and peak knee flexion in real time."
+            glyph="star"
+            onPress={() => onSelect('jump')}
+          />
+          <ModeCard
+            accent="sky"
+            eyebrow="SINGLE-LEG SQUAT · ALIGNMENT"
+            title="Rail Grind Pro"
+            body="Hold a single-leg squat and grind down the rail. Keep your knee stacked over your ankle."
+            glyph="rail"
+            onPress={() => onSelect('rail')}
+          />
+        </View>
 
-      <Text style={styles.footer}>Tap a mode to begin</Text>
+        <Text style={styles.footer}>Tap a mode to begin</Text>
+      </View>
     </View>
   );
 }
@@ -48,6 +50,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#030714',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     padding: 24,
     gap: 28,
